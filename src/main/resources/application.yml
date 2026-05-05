@@ -279,6 +279,17 @@ spring:
       on-profile: staging
   cloud.aws.region.static: us-east-1
 
+opensearch:
+  hostname: ${SEARCH_HOST}
+  port: 443
+  scheme: https
+  username: ${SEARCH_USERNAME}
+  password: ${SEARCH_PASSWORD}
+  index:
+    studies: study_search
+    autocomplete: study_autocomplete_v001
+    variables: variable_search
+
 logging:
   pattern:
     console: "[SEARCH] [STAGING] %d{yyyy-MM-dd HH:mm:ss.SSS} [%5p] --- [%15.15t] %-40.40logger{1.} :: %m%n%wEx"
