@@ -268,3 +268,17 @@ opensearch:
 logging:
   pattern:
     console: "[%boldMagenta(SEARCH)] [%boldGreen(PROD)] %d{yyyy-MM-dd HH:mm:ss.SSS} %highlight([%5p]) --- [%cyan(%15.15t)] %-40.40logger{1.} %boldYellow(::) %m%n%wEx"
+
+---
+# STAGING
+
+spring:
+  config:
+    import: aws-secretsmanager:${AWS_SECRET_NAME}
+    activate:
+      on-profile: staging
+  cloud.aws.region.static: us-east-1
+
+logging:
+  pattern:
+    console: "[SEARCH] [STAGING] %d{yyyy-MM-dd HH:mm:ss.SSS} [%5p] --- [%15.15t] %-40.40logger{1.} :: %m%n%wEx"
