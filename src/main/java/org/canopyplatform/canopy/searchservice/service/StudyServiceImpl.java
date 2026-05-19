@@ -1,5 +1,6 @@
 package org.canopyplatform.canopy.searchservice.service;
 
+import org.canopyplatform.canopy.searchservice.auth.SearchAccessContext;
 import org.canopyplatform.canopy.searchservice.config.QueryConfiguration;
 import org.canopyplatform.canopy.searchservice.models.OpensearchIndices;
 import org.canopyplatform.canopy.searchservice.models.SearchQuery;
@@ -11,6 +12,8 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
 import org.opensearch.common.unit.Fuzziness;
+import org.opensearch.index.query.BoolQueryBuilder;
+import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.aggregations.Aggregations;
 import org.opensearch.search.aggregations.bucket.filter.ParsedFilters;
 import org.opensearch.search.aggregations.bucket.terms.ParsedStringTerms;
@@ -75,8 +78,39 @@ public class StudyServiceImpl extends BaseSearchService implements StudyService 
         }
     }
 
-    public String searchStudies(SearchQuery searchQuery) {
-        return search(searchQuery);
+    public String searchStudies(SearchQuery searchQuery, SearchAccessContext context) {
+        return search(searchQuery, context);
+    }
+
+    /**
+     * Studies-index access filter:
+     * <ul>
+     *   <li>Anonymous → only documents with {@code access_level == PUBLIC}.</li>
+     *   <li>Authenticated, no override role → {@code access_level} in
+     *       (PUBLIC, LIMITED), OR {@code creator_id == me}.</li>
+     *   <li>Curator / Admin → no filter (full visibility).</li>
+     * </ul>
+     *
+     * The filter assumes the studies index documents carry
+     * {@code access_level} (keyword) and {@code creator_id} (long) fields.
+     * If they don't (e.g. the index hasn't been reindexed yet), the
+     * anonymous and non-override cases will match nothing — which is the
+     * intended fail-closed behavior.
+     */
+    @Override
+    protected void applyAccessFilter(BoolQueryBuilder queryBuilder, SearchAccessContext context) {
+        if (context == null || context.hasOverrideRole()) {
+            return;
+        }
+        if (context.isAnonymous()) {
+            queryBuilder.filter(QueryBuilders.termQuery("access_level", "PUBLIC"));
+            return;
+        }
+        BoolQueryBuilder access = QueryBuilders.boolQuery()
+                .should(QueryBuilders.termsQuery("access_level", "PUBLIC", "LIMITED"))
+                .should(QueryBuilders.termQuery("creator_id", context.userId()))
+                .minimumShouldMatch(1);
+        queryBuilder.filter(access);
     }
 
     // Override postProcessSearchResponse to add study-specific processing

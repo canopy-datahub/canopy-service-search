@@ -1,5 +1,6 @@
 package org.canopyplatform.canopy.searchservice.service;
 
+import org.canopyplatform.canopy.searchservice.auth.SearchAccessContext;
 import org.canopyplatform.canopy.searchservice.config.VariableQueryConfiguration;
 import org.canopyplatform.canopy.searchservice.models.OpensearchIndices;
 import org.canopyplatform.canopy.searchservice.models.SearchQuery;
@@ -27,8 +28,13 @@ public class VariableServiceImpl extends BaseSearchService implements VariableSe
         this.index = indices.variables();
     }
 
-    public String searchVariables(SearchQuery searchQuery) {
-        return search(searchQuery);
+    // Variables are not yet access-gated by this layer: the variable index
+    // would need `access_level` and `creator_id` fields populated per
+    // parent study, and the indexing-Lambda side hasn't shipped that yet.
+    // For now, threading the context through keeps the API consistent but
+    // applyAccessFilter remains the BaseSearchService no-op default.
+    public String searchVariables(SearchQuery searchQuery, SearchAccessContext context) {
+        return search(searchQuery, context);
     }
 
     // SearchConfiguration implementation

@@ -3,6 +3,7 @@ package org.canopyplatform.canopy.searchservice.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.canopyplatform.canopy.searchservice.auth.SearchAccessContext;
 import org.canopyplatform.canopy.searchservice.exceptions.AdvancedSearchException;
 import org.canopyplatform.canopy.searchservice.models.FacetDTO;
 import org.canopyplatform.canopy.searchservice.models.SearchQuery;
@@ -61,14 +62,25 @@ public abstract class BaseSearchService {
     protected abstract List<String> getCSVKeys();
     protected abstract String getCSVFilename();
 
-    public String search(SearchQuery searchQuery) {
+    public String search(SearchQuery searchQuery, SearchAccessContext context) {
         if (!searchQuery.getAdv().isBlank()) {
-            return advancedSearch(searchQuery);
+            return advancedSearch(searchQuery, context);
         }
-        return normalSearch(searchQuery);
+        return normalSearch(searchQuery, context);
     }
 
-    protected String normalSearch(SearchQuery searchQuery) {
+    /**
+     * Hook for subclasses to add an index-specific access filter (e.g. the
+     * studies index checks {@code access_level} and {@code creator_id} per
+     * the caller's context). Default: no extra filter — matches the
+     * pre-access-level behavior for indices that don't model per-document
+     * access.
+     */
+    protected void applyAccessFilter(BoolQueryBuilder queryBuilder, SearchAccessContext context) {
+        // no-op by default
+    }
+
+    protected String normalSearch(SearchQuery searchQuery, SearchAccessContext context) {
         // set index and initialize search and query builders
         final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         SearchRequest request = new SearchRequest(getIndex());
@@ -78,6 +90,7 @@ public abstract class BaseSearchService {
         if (!searchQuery.getQ().isBlank()) {
             applyQueryToBuilder(searchQuery.getQ(), queryBuilder);
         }
+        applyAccessFilter(queryBuilder, context);
         searchSourceBuilder.query(queryBuilder);
         applyInitialSearchParameters(searchSourceBuilder, searchQuery);
         request.source(searchSourceBuilder);
@@ -113,7 +126,7 @@ public abstract class BaseSearchService {
                 .boost(.8F));
     }
 
-    protected String advancedSearch(SearchQuery searchQuery) {
+    protected String advancedSearch(SearchQuery searchQuery, SearchAccessContext context) {
         final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         SearchRequest request = new SearchRequest(getIndex());
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
@@ -126,6 +139,7 @@ public abstract class BaseSearchService {
             log.error("Json error", e);
             throw new AdvancedSearchException("Problem processing advanced search query");
         }
+        applyAccessFilter(queryBuilder, context);
         log.debug(queryBuilder.toString());
         searchSourceBuilder.query(queryBuilder);
 
