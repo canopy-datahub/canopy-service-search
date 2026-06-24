@@ -111,10 +111,10 @@ class StudySearchImplTests {
                 "                \"_id\": \"1\",\n" +
                 "                \"_score\": null,\n" +
                 "                \"_source\": {\n" +
-                "                    \"studyenddate\": \"11/06/2020\",\n" +
+                "                    \"study_end_date\": \"11/06/2020\",\n" +
                 "                    \"grant_number\": \"2\",\n" +
                 "                    \"types\": \"Methods\",\n" +
-                "                    \"acknowledgement_statement\": \"testAcknowledgementStatement\",\n" +
+                "                    \"acknowledgment_statement\": \"testAcknowledgementStatement\",\n" +
                 "                    \"pi_name\": \"David Test\",\n" +
                 "                    \"estimated_participants\": \"3\",\n" +
                 "                    \"updated_at\": null,\n" +
@@ -139,7 +139,7 @@ class StudySearchImplTests {
                 "                    \"description\": \"TestDescription\",\n" +
                 "                    \"disease_specific_related_conditions\": null,\n" +
                 "                    \"study_citation\": null,\n" +
-                "                    \"studystartdate\": \"10/16/2020\",\n" +
+                "                    \"study_start_date\": \"10/16/2020\",\n" +
                 "                    \"actual_study_size\": \"7\",\n" +
                 "                    \"topics\": null,\n" +
                 "                    \"has_data_files\": \"Yes\",\n" +
